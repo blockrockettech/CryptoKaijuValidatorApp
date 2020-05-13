@@ -1,0 +1,13 @@
+{
+  "name": "ignite-shim",
+  "description": "A temporary package.json created to prevent node from wandering too far.",
+  "repository": "infinitered/ignite",
+  "license": "MIT",
+  "devDependencies": {
+    "ignite-bowser": "^5.0.3",
+    "ignite-i18n": "^1.2.0"
+  },
+  "dependencies": {
+    "react-native-i18n": "2.0.14"
+  }
+}
