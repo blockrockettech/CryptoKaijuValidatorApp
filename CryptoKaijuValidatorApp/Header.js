@@ -1,43 +1,39 @@
 'use strict';
-import {Text, StyleSheet, ImageBackground} from 'react-native';
+import {View, Image, StyleSheet} from 'react-native';
 import React from 'react';
 
-const Header = (): React$Node => (
-  <ImageBackground
-    accessibilityRole={'image'}
-    source={require('./assets/logo.png')}
-    style={styles.background}
-    imageStyle={styles.logo}>
-    <Text style={styles.text}>CryptoKaiju 🦖</Text>
-  </ImageBackground>
-);
-
 const styles = StyleSheet.create({
-  background: {
-    paddingBottom: 40,
-    paddingTop: 96,
-    paddingHorizontal: 32,
-    // backgroundColor: Colors.lighter,
-  },
   logo: {
-    opacity: 0.2,
-    overflow: 'visible',
-    resizeMode: 'cover',
-    /*
-     * These negative margins allow the image to be offset similarly across screen sizes and component sizes.
-     *
-     * The source logo.png image is 512x512px, so as such, these margins attempt to be relative to the
-     * source image's size.
-     */
-    marginLeft: -128,
-    marginBottom: -192,
+    flex: 0.1,
+    height: 50,
+    padding: 10,
   },
-  text: {
-    fontSize: 40,
-    fontWeight: '600',
-    textAlign: 'center',
-    // color: Colors.black,
+  logo2: {
+    flex: 0.85,
+    height: 70,
+    padding: 10,
+  },
+  viewbox: {
+    flexDirection: 'row',
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });
+
+const Header = (): React$Node => (
+  <View style={styles.viewbox}>
+    <Image
+      accessibilityRole={'image'}
+      source={require('./assets/Hamburger_icon.svg.png')}
+      style={styles.logo}>
+    </Image>
+    <Image
+      accessibilityRole={'image'}
+      source={require('./assets/logo.png')}
+      style={styles.logo2}>
+    </Image>
+  </View>
+);
 
 export default Header;
