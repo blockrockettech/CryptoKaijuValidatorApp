@@ -4,14 +4,16 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image
+  Image,
+  Button,
+  Linking,
 } from 'react-native';
 import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
 
-import KaijuTagParserService from "./services/KaijuTagParserService";
+import KaijuTagParserService from './services/KaijuTagParserService';
+import KaijuApiService from "./services/KaijuApiService";
 
 class NfcComponent extends React.Component {
-
   state = {
     kaiju: null,
   };
@@ -20,6 +22,7 @@ class NfcComponent extends React.Component {
     super();
 
     this.tagParser = new KaijuTagParserService();
+    this.api = new KaijuApiService();
   }
 
   componentDidMount() {
@@ -34,52 +37,59 @@ class NfcComponent extends React.Component {
     NfcManager.unregisterTagEvent().catch(() => 0);
   }
 
-  onTagScanned(tag) {
+  async onTagScanned(tag) {
     NfcManager.setAlertMessageIOS('I got your tag!');
     NfcManager.unregisterTagEvent().catch(() => 0);
 
     const nfcId = this.tagParser.getNfcID(tag);
-
-    fetch(`https://api.cryptokaiju.io/api/network/1/token/nfc/${nfcId}`, {
-      method: 'GET'
-    })
-      .then((response) => response.json())
-      .then((responseJson) => {
-        this.setState({
-          kaiju: responseJson,
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const kaiju = await this.api.getKaijuByNfcID(nfcId);
+    this.setState({
+      kaiju,
+    });
   }
 
   verifyBtn() {
-    return <TouchableOpacity
-    style={{padding: 10, width: 200, margin: 20, borderWidth: 1, borderColor: 'black'}}
-    onPress={this._test}
-      >
-      <Text style={{textAlign: 'center'}}>Verify</Text>
-    </TouchableOpacity>;
+    return (
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={this._scanNfc}>
+        <Text style={{textAlign: 'center'}}>Verify</Text>
+      </TouchableOpacity>
+    );
   }
 
   result() {
-    console.log('k image', this.state.kaiju.ipfsData.image);
+    console.log(this.state.kaiju);
     return (
       <>
-      <Image
-    accessibilityRole={'image'}
-    source={require('./assets/black-tick.png')}
-    ></Image>
-    <Image
-    accessibilityRole={'image'}
-    source={{uri: this.state.kaiju.ipfsData.image}}
-    style={{width: 250, height: 250}}
-    ></Image>
+        <Image
+          accessibilityRole={'image'}
+          source={require('./assets/black-tick.png')}
+        />
+        <Image
+          accessibilityRole={'image'}
+          source={{uri: this.state.kaiju.ipfsData.image}}
+          style={{width: 250, height: 250}}
+        />
 
-      <Text>{this.state.kaiju.ipfsData.name}</Text>
-      <Text>{this.state.kaiju.ipfsData.description}</Text>
-    </>
+        <Text>{this.state.kaiju.ipfsData.name}</Text>
+        <Text>{this.state.kaiju.ipfsData.description}</Text>
+        <Text>Owner: {this.state.kaiju.owner}</Text>
+        <Button
+          title={'View on OpenSea'}
+          onPress={() =>
+            Linking.openURL(
+              `https://opensea.io/assets/0x102c527714ab7e652630cac7a30abb482b041fd0/${this.state.kaiju.tokenId}`,
+            )
+          }
+        />
+      </>
     );
   }
 
@@ -91,7 +101,7 @@ class NfcComponent extends React.Component {
     NfcManager.unregisterTagEvent().catch(() => 0);
   };
 
-  _test = async () => {
+  _scanNfc = async () => {
     try {
       await NfcManager.registerTagEvent();
     } catch (ex) {
