@@ -28,7 +28,7 @@ export default class KaijuTagParserService {
     return decodedText;
   }
 
-  getNfcID(tag) {
+  getNfcIDFromText(tag) {
     const decodedText = this.getText(tag);
     const decodedTextSplitBySpaces = decodedText.split(' ');
 

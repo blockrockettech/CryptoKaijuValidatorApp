@@ -1,21 +1,23 @@
 import React from 'react';
 import {
-  View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Image,
   Button,
   Linking,
 } from 'react-native';
-import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
+import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 
 import KaijuTagParserService from './services/KaijuTagParserService';
-import KaijuApiService from "./services/KaijuApiService";
+import KaijuApiService from './services/KaijuApiService';
+import KaijuValidatorService from './services/KaijuValidatorService';
 
 class NfcComponent extends React.Component {
   state = {
     kaiju: null,
+    isValid: true,
+    scanned: false,
+    scanning: false,
   };
 
   constructor() {
@@ -23,28 +25,33 @@ class NfcComponent extends React.Component {
 
     this.tagParser = new KaijuTagParserService();
     this.api = new KaijuApiService();
+    this.validator = new KaijuValidatorService();
   }
 
   componentDidMount() {
     NfcManager.start();
-    NfcManager.setEventListener(NfcEvents.DiscoverTag, (tag) =>
-      this.onTagScanned(tag),
-    );
   }
 
   componentWillUnmount() {
-    NfcManager.setEventListener(NfcEvents.DiscoverTag, null);
-    NfcManager.unregisterTagEvent().catch(() => 0);
+    NfcManager.cancelTechnologyRequest().catch(() => 0);
   }
 
-  async onTagScanned(tag) {
+  async onTagReceived(tag) {
     NfcManager.setAlertMessageIOS('I got your tag!');
     NfcManager.unregisterTagEvent().catch(() => 0);
 
-    const nfcId = this.tagParser.getNfcID(tag);
-    const kaiju = await this.api.getKaijuByNfcID(nfcId);
+    const nfcIdFromChip = tag.id;
+    const nfcIdFromText = this.tagParser.getNfcIDFromText(tag);
+    const {kaiju, isValid} = await this.validator.validate(
+      this.api,
+      nfcIdFromChip,
+      nfcIdFromText,
+    );
+
     this.setState({
       kaiju,
+      isValid,
+      scanned: true,
     });
   }
 
@@ -64,14 +71,15 @@ class NfcComponent extends React.Component {
     );
   }
 
-  result() {
-    console.log(this.state.kaiju);
+  validResult() {
     return (
       <>
         <Image
           accessibilityRole={'image'}
           source={require('./assets/black-tick.png')}
+          style={{width: 100, height: 100}}
         />
+
         <Image
           accessibilityRole={'image'}
           source={{uri: this.state.kaiju.ipfsData.image}}
@@ -93,20 +101,57 @@ class NfcComponent extends React.Component {
     );
   }
 
-  render() {
-    return this.state.kaiju ? this.result() : this.verifyBtn();
+  invalidResult() {
+    return (
+      <>
+        <Image
+          accessibilityRole={'image'}
+          source={require('./assets/red-cross.png')}
+          style={{width: 100, height: 100}}
+        />
+        <Image
+          accessibilityRole={'image'}
+          source={require('./assets/green-kaiju.png')}
+        />
+        <Text style={{color: 'red'}}>That Kaiju is invalid</Text>
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            width: 200,
+            margin: 20,
+            borderWidth: 1,
+            borderColor: 'black',
+          }}>
+          <Text style={{textAlign: 'center'}}>Report</Text>
+        </TouchableOpacity>
+      </>
+    );
   }
 
-  _cancel = () => {
-    NfcManager.unregisterTagEvent().catch(() => 0);
-  };
+  result() {
+    return this.state.isValid ? this.validResult() : this.invalidResult();
+  }
+
+  render() {
+    return this.state.scanned ? this.result() : this.verifyBtn();
+  }
 
   _scanNfc = async () => {
     try {
-      await NfcManager.registerTagEvent();
+      await NfcManager.requestTechnology([
+        NfcTech.MifareIOS,
+        NfcTech.Iso15693IOS,
+        NfcTech.IsoDep,
+      ]);
+
+      let tag = await NfcManager.getTag();
+
+      this.onTagReceived(tag);
+
+      NfcManager.cancelTechnologyRequest().catch(() => 0);
     } catch (ex) {
-      console.warn('ex', ex);
-      NfcManager.unregisterTagEvent().catch(() => 0);
+      console.error('ex', ex);
+      NfcManager.cancelTechnologyRequest().catch(() => 0);
     }
   };
 }
