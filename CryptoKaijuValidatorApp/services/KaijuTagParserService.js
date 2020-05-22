@@ -34,12 +34,15 @@ export default class KaijuTagParserService {
 
     let nfcId = '';
     decodedTextSplitBySpaces.forEach((part, index) => {
+      // Find the first instance of 'ID' as that should be the word closest to the NFC ID
       // Ensure the lookahead does not cause an out of bounds
-      if (part === 'NFC' && index + 2 < decodedTextSplitBySpaces.length) {
-        nfcId = decodedTextSplitBySpaces[index + 2];
+      if (
+        !nfcId &&
+        part.indexOf('ID') !== -1 &&
+        index + 1 < decodedTextSplitBySpaces.length
+      ) {
+        nfcId = decodedTextSplitBySpaces[index + 1];
       }
-
-      // TODO handle the case where the NFC ID is denoted by just 'ID'
     });
 
     return nfcId;
