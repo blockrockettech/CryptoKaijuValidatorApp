@@ -22,7 +22,7 @@ export default class KaijuTagParserService {
 
     // drop 'en' from the start of the string if needed (it's not part of the text)
     if (decodedText.indexOf('en') === 0) {
-      decodedText = decodedText.slice(2, decodedText.length - 1);
+      decodedText = decodedText.slice(2, decodedText.length);
     }
 
     return decodedText;
@@ -38,8 +38,27 @@ export default class KaijuTagParserService {
       if (part === 'NFC' && index + 2 < decodedTextSplitBySpaces.length) {
         nfcId = decodedTextSplitBySpaces[index + 2];
       }
+
+      // TODO handle the case where the NFC ID is denoted by just 'ID'
     });
 
     return nfcId;
+  }
+
+  getKittyIDFromText(tag) {
+    const decodedText = this.getText(tag);
+    const decodedTextSplitBySpaces = decodedText.split(' ');
+
+    let kittyId = '';
+    decodedTextSplitBySpaces.forEach((part, index) => {
+      // Ensure the lookahead does not cause an out of bounds
+      if (part === 'Kitty' && index + 2 < decodedTextSplitBySpaces.length) {
+        kittyId = decodedTextSplitBySpaces[index + 2];
+      }
+
+      // TODO handle the case where the kitty ID is denoted by just 'ID'
+    });
+
+    return kittyId;
   }
 }

@@ -42,10 +42,15 @@ class NfcComponent extends React.Component {
 
     const nfcIdFromChip = tag.id;
     const nfcIdFromText = this.tagParser.getNfcIDFromText(tag);
+
+    // If we have scanned a kitty kaiju, so try to get its token ID
+    const kittyId = this.tagParser.getKittyIDFromText(tag);
+
     const {kaiju, isValid} = await this.validator.validate(
       this.api,
       nfcIdFromChip,
       nfcIdFromText,
+      kittyId,
     );
 
     this.setState({
