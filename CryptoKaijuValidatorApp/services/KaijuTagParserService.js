@@ -9,8 +9,8 @@ const newLineCharCode = 10;
 
 export default class KaijuTagParserService {
   getText(tag) {
-    if (!tag || !tag.ndefMessage[0]) {
-      return '';
+      if (!tag || !tag.ndefMessage || !tag.ndefMessage[0]) {
+      return ''
     }
 
     // Get the tag's text but only the 0-9, A-Z, a-z characters
@@ -30,6 +30,7 @@ export default class KaijuTagParserService {
 
   getNfcIDFromText(tag) {
     const decodedText = this.getText(tag);
+
     const decodedTextSplitBySpaces = decodedText.split(' ');
 
     let nfcId = '';

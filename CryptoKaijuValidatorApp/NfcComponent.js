@@ -5,12 +5,25 @@ import {
   Image,
   Button,
   Linking,
+  StyleSheet,
 } from 'react-native';
-import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import NFCService from './services/NFCService';
 import KaijuTagParserService from './services/KaijuTagParserService';
 import KaijuApiService from './services/KaijuApiService';
 import KaijuValidatorService from './services/KaijuValidatorService';
+
+const styles = StyleSheet.create({
+  viewbox: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignContent: 'center',
+    padding: 50,
+  },
+});
 
 class NfcComponent extends React.Component {
   state = {
@@ -26,20 +39,26 @@ class NfcComponent extends React.Component {
     this.tagParser = new KaijuTagParserService();
     this.api = new KaijuApiService();
     this.validator = new KaijuValidatorService();
+    this.nfcService = new NFCService();
   }
 
   componentDidMount() {
-    NfcManager.start();
+    this.nfcService.start();
+
+    this._unsubscribe = this.props.navigation.addListener('focus', () => {
+      this.setState({
+        kaiju: null,
+        isValid: false,
+        scanned: false,
+      });
+    });
   }
 
   componentWillUnmount() {
-    NfcManager.cancelTechnologyRequest().catch(() => 0);
+    this._unsubscribe();
   }
 
   async onTagReceived(tag) {
-    NfcManager.setAlertMessageIOS('I got your tag!');
-    NfcManager.unregisterTagEvent().catch(() => 0);
-
     const nfcIdFromChip = tag.id;
     const nfcIdFromText = this.tagParser.getNfcIDFromText(tag);
 
@@ -62,23 +81,25 @@ class NfcComponent extends React.Component {
 
   verifyBtn() {
     return (
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={this._scanNfc}>
-        <Text style={{textAlign: 'center'}}>Verify</Text>
-      </TouchableOpacity>
+      <SafeAreaView style={styles.viewbox}>
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            width: 200,
+            margin: 20,
+            borderWidth: 1,
+            borderColor: 'black',
+          }}
+          onPress={this._scanNfc}>
+          <Text style={{textAlign: 'center'}}>Start Scanning</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     );
   }
 
   validResult() {
     return (
-      <>
+      <SafeAreaView style={styles.viewbox}>
         <Image
           accessibilityRole={'image'}
           source={require('./assets/black-tick.png')}
@@ -102,13 +123,13 @@ class NfcComponent extends React.Component {
             )
           }
         />
-      </>
+      </SafeAreaView>
     );
   }
 
   invalidResult() {
     return (
-      <>
+      <SafeAreaView style={styles.viewbox}>
         <Image
           accessibilityRole={'image'}
           source={require('./assets/red-cross.png')}
@@ -129,7 +150,7 @@ class NfcComponent extends React.Component {
           }}>
           <Text style={{textAlign: 'center'}}>Report</Text>
         </TouchableOpacity>
-      </>
+      </SafeAreaView>
     );
   }
 
@@ -142,22 +163,8 @@ class NfcComponent extends React.Component {
   }
 
   _scanNfc = async () => {
-    try {
-      await NfcManager.requestTechnology([
-        NfcTech.MifareIOS,
-        NfcTech.Iso15693IOS,
-        NfcTech.IsoDep,
-      ]);
-
-      let tag = await NfcManager.getTag();
-
-      this.onTagReceived(tag);
-
-      NfcManager.cancelTechnologyRequest().catch(() => 0);
-    } catch (ex) {
-      console.error('ex', ex);
-      NfcManager.cancelTechnologyRequest().catch(() => 0);
-    }
+    const tag = await this.nfcService.scan();
+    this.onTagReceived(tag);
   };
 }
 

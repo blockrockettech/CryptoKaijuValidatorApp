@@ -21,12 +21,14 @@ const styles = StyleSheet.create({
   },
 });
 
-const Header = (): React$Node => (
+const Header = ({navigation}): React$Node => (
   <View style={styles.viewbox}>
     <Image
       accessibilityRole={'image'}
       source={require('./assets/Hamburger_icon.svg.png')}
-      style={styles.logo}>
+      style={styles.logo}
+      onPress={() => navigation.toggleDrawer()}
+    >
     </Image>
     <Image
       accessibilityRole={'image'}
