@@ -1,6 +1,10 @@
-import NfcManager, {NfcTech, Ndef} from 'react-native-nfc-manager';
+import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 
 export default class NFCService {
+  constructor() {
+    this.scanStarted = false;
+  }
+
   start() {
     NfcManager.start();
   }
@@ -8,17 +12,26 @@ export default class NFCService {
   async scan() {
     let tag;
 
+    if (this.scanStarted === true) {
+      this.scanStarted = false;
+      this.cleanUp();
+    }
+
     try {
       await NfcManager.requestTechnology(
         [NfcTech.MifareIOS, NfcTech.Iso15693IOS, NfcTech.IsoDep],
         {alertMessage: 'Please scan the bottom of your Kaiju'},
       );
 
+      this.scanStarted = true;
+
       tag = await NfcManager.getTag();
 
+      this.scanStarted = false;
       this.cleanUp();
     } catch (ex) {
       console.error('Failed to scan', ex);
+      this.scanStarted = false;
       this.cleanUp();
     }
 
