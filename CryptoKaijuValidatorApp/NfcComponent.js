@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 import NFCService from './services/NFCService';
 import KaijuTagParserService from './services/KaijuTagParserService';
@@ -59,6 +59,7 @@ class NfcComponent extends React.Component {
   }
 
   async onTagReceived(tag) {
+    console.log('onTagReceived', tag);
     const nfcIdFromChip = tag.id;
     const nfcIdFromText = this.tagParser.getNfcIDFromText(tag);
 
@@ -75,6 +76,7 @@ class NfcComponent extends React.Component {
     this.setState({
       kaiju,
       isValid,
+      nfcIdFromChip,
       scanned: true,
     });
   }
@@ -102,21 +104,33 @@ class NfcComponent extends React.Component {
       <SafeAreaView style={styles.viewbox}>
         <Image
           accessibilityRole={'image'}
-          source={require('./assets/black-tick.png')}
+          source={require('./assets/green-tick.png')}
           style={{width: 100, height: 100}}
         />
 
         <Image
           accessibilityRole={'image'}
           source={{uri: this.state.kaiju.ipfsData.image}}
-          style={{width: 250, height: 250}}
+          style={{width: 250, height: 250, resizeMode: 'contain'}}
         />
 
-        <Text>{this.state.kaiju.ipfsData.name}</Text>
-        <Text>{this.state.kaiju.ipfsData.description}</Text>
-        <Text>Owner: {this.state.kaiju.owner}</Text>
+        <Text style={{marginBottom: 10, fontWeight: 'bold'}}>
+          {this.state.kaiju.ipfsData.name}
+        </Text>
+        <Text style={{marginBottom: 10}}>
+          {this.state.kaiju.ipfsData.description}
+        </Text>
+        <Text style={{marginBottom: 10}}>
+          <Text style={{marginBottom: 5}}>Chip ID</Text>
+          <Text style={{marginBottom: 10}}>{this.state.nfcIdFromChip}</Text>
+        </Text>
+        <Text style={{marginBottom: 10}}>
+          <Text style={{marginBottom: 5}}>Current owner</Text>
+          <Text style={{marginBottom: 10}}>{this.state.kaiju.owner}</Text>
+        </Text>
         <Button
           title={'View on OpenSea'}
+          style={{width: 'auto'}}
           onPress={() =>
             Linking.openURL(
               `https://opensea.io/assets/0x102c527714ab7e652630cac7a30abb482b041fd0/${this.state.kaiju.tokenId}`,
@@ -163,8 +177,11 @@ class NfcComponent extends React.Component {
   }
 
   _scanNfc = async () => {
+    console.log('Scanning chip');
     const tag = await this.nfcService.scan();
-    this.onTagReceived(tag);
+
+    console.log('Chip scanned, tag', tag);
+    await this.onTagReceived(tag);
   };
 }
 

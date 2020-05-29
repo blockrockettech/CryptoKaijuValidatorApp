@@ -18,7 +18,7 @@ export default class NFCService {
 
       this.cleanUp();
     } catch (ex) {
-      console.error('ex', ex);
+      console.error('Failed to scan', ex);
       this.cleanUp();
     }
 
@@ -85,6 +85,6 @@ export default class NFCService {
 
   cleanUp() {
     NfcManager.setAlertMessageIOS('Processing Kaiju...');
-    NfcManager.cancelTechnologyRequest().catch(() => 0);
+    NfcManager.cancelTechnologyRequest().catch(console.error);
   }
 }
