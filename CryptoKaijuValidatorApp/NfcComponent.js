@@ -6,6 +6,7 @@ import {
   Button,
   Linking,
   StyleSheet,
+  Platform
 } from 'react-native';
 
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -81,7 +82,16 @@ class NfcComponent extends React.Component {
     });
   }
 
-  verifyBtn() {
+  scanView() {
+    let additionalInfo = null;
+    if (this.state.scanning && Platform.OS === 'android') {
+      additionalInfo = (
+        <Text style={{marginBottom: 10, fontWeight: 'bold'}}>
+          Please scan the bottom of your Kaiju
+        </Text>
+      );
+    }
+
     return (
       <SafeAreaView style={styles.viewbox}>
         <TouchableOpacity
@@ -95,6 +105,7 @@ class NfcComponent extends React.Component {
           onPress={this._scanNfc}>
           <Text style={{textAlign: 'center'}}>Start Scanning</Text>
         </TouchableOpacity>
+        {additionalInfo}
       </SafeAreaView>
     );
   }
@@ -173,12 +184,20 @@ class NfcComponent extends React.Component {
   }
 
   render() {
-    return this.state.scanned ? this.result() : this.verifyBtn();
+    return this.state.scanned ? this.result() : this.scanView();
   }
 
   _scanNfc = async () => {
+    this.setState({
+      scanning: true,
+    });
+
     console.log('Scanning chip');
     const tag = await this.nfcService.scan();
+
+    this.setState({
+      scanning: false,
+    });
 
     console.log('Chip scanned, tag', tag);
     await this.onTagReceived(tag);
